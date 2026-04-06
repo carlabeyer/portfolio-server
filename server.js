@@ -1,24 +1,41 @@
-const express = require("express");
-const multer = require("multer");
-const cors = require("cors");
+const nodemailer = require("nodemailer");
 
-const app = express();
-const upload = multer();
+app.post("/api/contact", upload.none(), async (req, res) => {
+  const { name, email, phone, company, message } = req.body;
 
-app.use(cors());
+  if (!name || !email || !message) {
+    return res.status(400).json({ message: "Pflichtfelder fehlen" });
+  }
 
-app.get("/", (req, res) => {
-  res.send("Server läuft ✅");
-});
+  try {
+    const transporter = nodemailer.createTransport({
+      host: "smtp.ionos.de",
+      port: 465,
+      secure: true,
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS
+      }
+    });
 
-/* 🔥 FORMULAR ROUTE */
-app.post("/api/contact", upload.none(), (req, res) => {
-  console.log("📩 Formular erhalten:");
-  console.log(req.body);
+    await transporter.sendMail({
+      from: `"Portfolio Kontakt" <${process.env.MAIL_USER}>`,
+      to: "kontakt@carlas-portfolio.com",
+      subject: "Neue Anfrage über Portfolio",
+      html: `
+        <h2>Neue Kontaktanfrage</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Telefon:</strong> ${phone || "-"}</p>
+        <p><strong>Firma:</strong> ${company || "-"}</p>
+        <p><strong>Nachricht:</strong><br>${message}</p>
+      `
+    });
 
-  res.json({ message: "Daten angekommen ✅" });
-});
+    res.json({ message: "Mail gesendet ✅" });
 
-app.listen(process.env.PORT || 3000, () => {
-  console.log("Server läuft");
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Mail konnte nicht gesendet werden ❌" });
+  }
 });
