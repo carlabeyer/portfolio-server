@@ -1,5 +1,18 @@
+const express = require("express");
+const multer = require("multer");
+const cors = require("cors");
 const nodemailer = require("nodemailer");
 
+const app = express();
+const upload = multer();
+
+app.use(cors());
+
+app.get("/", (req, res) => {
+  res.send("Server läuft ✅");
+});
+
+/* 🔥 FORMULAR ROUTE */
 app.post("/api/contact", upload.none(), async (req, res) => {
   const { name, email, phone, company, message } = req.body;
 
@@ -38,4 +51,8 @@ app.post("/api/contact", upload.none(), async (req, res) => {
     console.error(error);
     res.status(500).json({ message: "Mail konnte nicht gesendet werden ❌" });
   }
+});
+
+app.listen(process.env.PORT || 3000, () => {
+  console.log("Server läuft");
 });
